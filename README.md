@@ -10,6 +10,9 @@ without touching a single form.
 
 No dependencies beyond Django itself: verification uses the standard library only.
 
+**[Try the live demo](https://django-captcha-kit.vercel.app/)** — the same contact form
+protected by all five providers, side by side, with the code for each integration path.
+
 ## Table of contents
 
 - [Why this package](#why-this-package)
@@ -476,6 +479,20 @@ With pip instead, development dependencies live in the PEP 735 `dev` group:
 pip install -e .
 pip install --group dev   # pip 25.1 or newer
 pytest
+```
+
+### Running the demo locally
+
+The site behind the [live demo](https://django-captcha-kit.vercel.app/) lives in
+[`example/django_app_demo`](example/django_app_demo). It has no database and no
+migrations, and its `.env.example` ships the public test keys of each service, so it runs
+as soon as it is installed:
+
+```bash
+cd example/django_app_demo
+cp .env.example .env
+pdm install
+pdm run python manage.py runserver
 ```
 
 ## License
