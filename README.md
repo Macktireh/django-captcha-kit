@@ -104,19 +104,54 @@ migrations.
 
 ## Quick start
 
+### Try it in 30 seconds (no account, no keys)
+
+The built-in `math` provider runs entirely locally: no third-party account, no API keys, no
+script to load. It is the fastest way to see the package working:
+
 ```python
 # settings.py
 CAPTCHA_KIT = {
-    "DEFAULT": env("CAPTCHA_DRIVER", default="none"),
+    "DEFAULT": "math",
+}
+```
+
+Add the field, the view and the template (the three shared steps below) and it works
+immediately. The `math` provider is a lightweight anti-spam measure, **not a secure CAPTCHA** —
+read [Local Math Captcha](#local-math-captcha) before using it beyond tests and demos.
+
+### Use a real provider in production
+
+For real bot resistance, point `DEFAULT` at a hosted provider such as Cloudflare Turnstile.
+You first need a (free) Cloudflare account and a Turnstile widget, which gives you a **site key**
+(public, rendered in the page) and a **secret key** (private, used server-side): create the
+widget from the Cloudflare dashboard — see the
+[Turnstile documentation](https://developers.cloudflare.com/turnstile/). reCAPTCHA and hCaptcha
+work the same way, each with its own dashboard.
+
+```python
+# settings.py
+import os
+
+CAPTCHA_KIT = {
+    "DEFAULT": "turnstile",
     "PROVIDERS": {
         "turnstile": {
-            "SITE_KEY": env("TURNSTILE_SITE_KEY"),
-            "SECRET_KEY": env("TURNSTILE_SECRET_KEY"),
+            "SITE_KEY": os.environ["TURNSTILE_SITE_KEY"],
+            "SECRET_KEY": os.environ["TURNSTILE_SECRET_KEY"],
             "TIMEOUT": 5,
         },
     },
 }
 ```
+
+Define `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` in your environment before starting the
+server, and never commit the secret key. Any loader works — plain `os.environ` as above, or a
+helper such as `django-environ`.
+
+### Add the field, the view and the template
+
+These three steps are identical whichever provider you configured above.
 
 ```python
 # forms.py
@@ -146,11 +181,15 @@ def contact(request):
 </form>
 ```
 
+`{{ form.as_p }}` renders the widget for you, including the provider's `<script>` tag when it
+has one, so there is nothing else to wire in the template.
+
 Passing `request=request` is optional but recommended: it forwards the client IP to the
 verification endpoint as `remoteip`, which most providers use for risk scoring.
 
-The `none` driver, used by default, renders a hidden field and always validates. Keep it in
-development and in tests, and point `DEFAULT` at a real provider in production.
+When `CAPTCHA_KIT` is left undefined, the `none` driver is used: it renders a hidden field and
+always validates. Keep it in development and in tests, and point `DEFAULT` at a real provider in
+production.
 
 ## Usage
 
