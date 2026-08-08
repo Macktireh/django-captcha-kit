@@ -1,8 +1,26 @@
-# django-captcha-kit
+<h1 align="center">django-captcha-kit</h1>
 
-[![PyPI](https://img.shields.io/pypi/v/django-captcha-kit.svg)](https://pypi.org/project/django-captcha-kit/)
-[![Python](https://img.shields.io/pypi/pyversions/django-captcha-kit.svg)](https://pypi.org/project/django-captcha-kit/)
-[![License](https://img.shields.io/pypi/l/django-captcha-kit.svg)](https://github.com/Macktireh/django-captcha-kit/blob/main/LICENSE)
+<p align="center">
+    <!-- row 1 — project metadata -->
+    <a href="https://pypi.org/project/django-captcha-kit">
+      <img src="https://img.shields.io/pypi/v/django-captcha-kit.svg" alt="PyPI Package Version">
+    </a>
+    <a href="https://pypi.org/project/django-captcha-kit">
+      <img src="https://img.shields.io/pypi/pyversions/django-captcha-kit.svg" alt="Python Versions">
+    </a>
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" />
+    <br>
+    <!-- row 2 — project status -->
+    <a href="https://github.com/Macktireh/django-captcha-kit/actions/workflows/ci.yml?query=branch%3Amain">
+      <img src="https://github.com/Macktireh/django-captcha-kit/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI">
+    </a>
+    <a href="https://pdm-project.org">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fpdm-project%2F.github%2Fbadge.json" alt="PDM">
+    </a>
+    <a href="https://github.com/astral-sh/ruff">
+      <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff">
+    </a>
+</p>
 
 An interchangeable CAPTCHA service for Django. Protect your forms with Cloudflare Turnstile,
 Google reCAPTCHA or hCaptcha, and switch provider by editing one line of configuration
