@@ -7,8 +7,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-license = "MIT"
-license-files = ["LICENSE"]
+license = { text = "MIT" }
 keywords = ["django", "captcha", "turnstile", "recaptcha", "hcaptcha", "spam"]
 classifiers = [
     "Programming Language :: Python :: 3.12",
