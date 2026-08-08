@@ -119,10 +119,8 @@ class MathCaptchaProvider(BaseCaptchaProvider):
         if not token:
             return False
 
-        if self.single_use and not self._consume(token):
-            logger.debug("Math CAPTCHA challenge submitted twice")
-            return False
-
+        # Signature is checked before _consume so a forged token never writes to
+        # the cache; a valid token is still burnt below even on a wrong answer.
         try:
             payload = self._signer.unsign(token, max_age=self.max_age)
         except SignatureExpired:
@@ -130,6 +128,10 @@ class MathCaptchaProvider(BaseCaptchaProvider):
             return False
         except BadSignature:
             logger.warning("Math CAPTCHA challenge carries an invalid signature")
+            return False
+
+        if self.single_use and not self._consume(token):
+            logger.debug("Math CAPTCHA challenge submitted twice")
             return False
 
         nonce, _, expected = payload.partition(":")

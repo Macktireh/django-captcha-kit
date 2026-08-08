@@ -1,7 +1,10 @@
+import logging
+
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.test import override_settings
 
+from captcha_kit.providers.none import NoneProvider
 from captcha_kit.registry import get_captcha_provider
 from tests.support import TURNSTILE_SETTINGS
 
@@ -10,6 +13,13 @@ def test_none_provider_by_default():
     provider = get_captcha_provider()
     assert provider.field() == "captcha"
     assert provider.verify("anything") is True
+
+
+def test_none_provider_warns_at_runtime_in_production(caplog):
+    NoneProvider._warned = False
+    with override_settings(DEBUG=False), caplog.at_level(logging.WARNING, logger="captcha_kit"):
+        get_captcha_provider().verify("anything")
+    assert any("none" in record.getMessage().lower() for record in caplog.records)
 
 
 def test_provider_instance_is_reused():

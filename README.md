@@ -285,9 +285,15 @@ form field whatever you like.
 ### Local Math Captcha
 
 The `math` provider asks the visitor to solve a small sum. It contacts nothing, loads no
-third-party script, sets no cookie and needs no account, which makes it a fit for intranets,
-air-gapped deployments, or any site that would rather not send visitor data to a CAPTCHA
-vendor.
+third-party script, sets no cookie and needs no account.
+
+> [!WARNING]
+> **The math provider is not a secure CAPTCHA.** It is a lightweight anti-spam speed bump
+> against naive form-filling bots, nothing more: the question is rendered in clear text, so
+> any targeted attacker parses and solves it, and the answer space is tiny. **Do not rely on
+> it to protect a production application.** It is meant for end-to-end tests, local development
+> and demos. When you need real bot resistance in production, use Turnstile, reCAPTCHA or
+> hCaptcha.
 
 ```python
 CAPTCHA_KIT = {
@@ -330,10 +336,8 @@ Override the template to restyle the challenge. It receives `question`, `token`,
 "PROVIDERS": {"math": {"TEMPLATE_NAME": "myapp/math_captcha.html"}}
 ```
 
-Be clear-eyed about what this buys you. A math challenge stops naive form-filling bots; it
-does not stop a targeted attacker, who can parse the question and solve it. The answer space
-is also small, so pair it with rate limiting on the view. When you need real bot resistance,
-use Turnstile, reCAPTCHA or hCaptcha.
+As stated above, this only stops naive bots and is not fit for production. If you deploy it
+anyway, pair it with rate limiting on the view to blunt repeated guessing.
 
 ## Security notes
 
