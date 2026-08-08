@@ -1,0 +1,6 @@
+{% load i18n %}
+<div class="captcha-math">
+    <label for="id_{{ answer_field }}">{% blocktranslate %}What is {{ question }}?{% endblocktranslate %}</label>
+    <input type="text" name="{{ answer_field }}" id="id_{{ answer_field }}" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input type="hidden" name="{{ challenge_field }}" value="{{ token }}">
+</div>
