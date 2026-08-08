@@ -1,0 +1,52 @@
+{% extends "demo/base.html" %}
+{% load captcha_kit %}
+
+{% block title %}
+    {{ provider.name }} tag - django-captcha-kit demo
+{% endblock %}
+
+{% block content %}
+    <h1>{{ provider.name }}<span class="tag">{{ provider.alias }}</span></h1>
+    <p class="lede">
+        A form written by hand in the template, with no <code>forms.Form</code> behind it.
+        The <code>{% templatetag openblock %} captcha {% templatetag closeblock %}</code> tag
+        renders the widget; the view does the verification itself.
+    </p>
+
+    {% if success %}
+        <p class="banner ok">Verified by {{ provider.name }}. Client IP seen as {{ client_ip }}.</p>
+    {% elif submitted %}
+        <p class="banner ko">Rejected. Try again.</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            <label for="id_message">Message</label>
+            <textarea name="message" id="id_message" rows="4"></textarea>
+        </p>
+        {% captcha provider.alias %}
+        <button type="submit">Send</button>
+    </form>
+
+    <h2>The code</h2>
+    <pre><code>{% templatetag openblock %} load captcha_kit {% templatetag closeblock %}
+    &lt;form method="post"&gt;
+        {% templatetag openblock %} csrf_token {% templatetag closeblock %}
+        ...
+        {% templatetag openblock %} captcha "{{ provider.alias }}" {% templatetag closeblock %}
+        &lt;button&gt;Send&lt;/button&gt;
+    &lt;/form&gt;</code></pre>
+    <pre><code>provider = get_captcha_provider("{{ provider.alias }}")
+    value = provider.value_from_datadict(request.POST)
+    if value and provider.verify(value, ip=get_client_ip(request)):
+        ...</code></pre>
+    <p>
+        <code>value_from_datadict</code> is what lets this work for every provider, including
+        the math captcha, whose widget submits two inputs rather than one.
+    </p>
+    <p>
+        <a href="{% url 'field' provider.alias %}">See the same provider through the form field</a>
+        {% if provider.docs %} &middot; <a href="{{ provider.docs }}" rel="noopener">{{ provider.docs_label }}</a>{% endif %}
+    </p>
+{% endblock %}

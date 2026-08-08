@@ -1,0 +1,50 @@
+{% extends "demo/base.html" %}
+
+{% block content %}
+    <h1>django-captcha-kit</h1>
+    <p class="lede">
+        The same contact form, protected by five interchangeable providers. Nothing in the
+        form code changes between them: only <code>CAPTCHA_KIT</code> does.
+    </p>
+
+    <h2>Providers</h2>
+    {% for provider in providers %}
+        <div class="card">
+            <h3>
+                {{ provider.name }}
+                <span class="tag">{{ provider.alias }}</span>
+                {% if provider.alias == default_alias %}<span class="tag">default</span>{% endif %}
+            </h3>
+            <p>{{ provider.summary }}</p>
+            {% if provider.error %}
+                <p class="banner ko">
+                    Unavailable: {{ provider.error }}
+                    {% if provider.keys %}Set {% for key in provider.keys %}<code>{{ key }}</code>{% if not forloop.last %} and {% endif %}{% endfor %} in your <code>.env</code>.{% endif %}
+                </p>
+            {% else %}
+                <div class="links">
+                    <a href="{% url 'field' provider.alias %}">Form field</a>
+                    <a href="{% url 'tag' provider.alias %}">Template tag</a>
+                    {% if provider.docs %}<a href="{{ provider.docs }}" rel="noopener">{{ provider.docs_label }}</a>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <h2>Switching provider</h2>
+    <p>The demo picks the provider from the URL, but a real project names one in its settings:</p>
+    <pre><code>CAPTCHA_KIT = {
+        "DEFAULT": "turnstile",
+        "PROVIDERS": {
+            "turnstile": {
+                "SITE_KEY": env("TURNSTILE_SITE_KEY"),
+                "SECRET_KEY": env("TURNSTILE_SECRET_KEY"),
+            },
+        },
+    }</code></pre>
+    <p>
+        Changing <code>DEFAULT</code> is the whole migration. Try it by editing
+        <code>CAPTCHA_DRIVER</code> in <code>.env</code>, then reload
+        <a href="{% url 'mixin' %}">the form mixin page</a>.
+    </p>
+{% endblock %}

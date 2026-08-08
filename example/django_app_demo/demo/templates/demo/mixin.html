@@ -1,0 +1,42 @@
+{% extends "demo/base.html" %}
+
+{% block title %}
+    Form mixin - django-captcha-kit demo
+{% endblock %}
+
+{% block content %}
+    <h1>Form mixin</h1>
+    <p class="lede">
+        <code>CaptchaFormMixin</code> adds the field and forwards the client IP. It uses
+        the provider named by <code>CAPTCHA_KIT["DEFAULT"]</code>, currently
+        <code>{{ default_alias }}</code>.
+    </p>
+
+    {% if success %}
+        <p class="banner ok">Verified. In a real project this is where the message would be sent.</p>
+    {% elif submitted %}
+        <p class="banner ko">Rejected. Fix the errors below and try again.</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Send</button>
+    </form>
+
+    <h2>The code</h2>
+    <pre><code>class ContactForm(CaptchaFormMixin, forms.Form):
+        name = forms.CharField(max_length=100)
+        email = forms.EmailField()
+        message = forms.CharField(widget=forms.Textarea)
+
+
+    def contact(request):
+        form = ContactForm(request.POST or None, request=request)
+        if request.method == "POST" and form.is_valid():
+            ...</code></pre>
+    <p>
+        Passing <code>request</code> is optional. It forwards the client IP to the provider
+        as <code>remoteip</code>, which the services use for risk scoring.
+    </p>
+{% endblock %}

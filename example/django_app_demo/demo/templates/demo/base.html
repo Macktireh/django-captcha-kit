@@ -1,0 +1,237 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}django-captcha-kit demo{% endblock %}</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f6f7f9;
+        --border: #dfe3e8;
+        --text: #1b1f24;
+        --muted: #5c6672;
+        --accent: #2f5fd0;
+        --ok-bg: #e7f6ec;
+        --ok-text: #1b6b39;
+        --ko-bg: #fdecec;
+        --ko-text: #a32020;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14171b;
+          --surface: #1c2026;
+          --border: #2c323a;
+          --text: #e6e9ed;
+          --muted: #98a2b0;
+          --accent: #7aa2f7;
+          --ok-bg: #16301f;
+          --ok-text: #7ee2a4;
+          --ko-bg: #331a1a;
+          --ko-text: #f19292;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2rem 1rem 4rem;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+      }
+      a {
+        color: var(--accent);
+      }
+      h1 {
+        font-size: 1.7rem;
+        margin: 0 0 0.3rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 2.5rem 0 0.75rem;
+      }
+      p.lede {
+        color: var(--muted);
+        margin: 0 0 2rem;
+      }
+      nav {
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+      }
+      nav a {
+        margin-right: 1rem;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.25rem 1.4rem;
+        margin-bottom: 1rem;
+      }
+      .card h3 {
+        margin: 0 0 0.3rem;
+        font-size: 1rem;
+      }
+      .card p {
+        margin: 0 0 0.75rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .card .links a {
+        margin-right: 0.9rem;
+        font-size: 0.9rem;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.5rem;
+        border-radius: 99px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        margin-left: 0.4rem;
+      }
+      form p {
+        margin: 0 0 1rem;
+      }
+      label {
+        display: block;
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      input[type="text"],
+      input[type="email"],
+      textarea {
+        width: 100%;
+        padding: 0.55rem 0.7rem;
+        font: inherit;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+      }
+      textarea {
+        min-height: 4rem;
+        max-height: 6rem;
+        resize: vertical;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        border: 0;
+        border-radius: 7px;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+      ul.errorlist {
+        margin: 0.3rem 0 0;
+        padding-left: 1.1rem;
+        color: var(--ko-text);
+        font-size: 0.88rem;
+      }
+      .banner {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 0.93rem;
+      }
+      .banner.ok {
+        background: var(--ok-bg);
+        color: var(--ok-text);
+      }
+      .banner.ko {
+        background: var(--ko-bg);
+        color: var(--ko-text);
+      }
+      .captcha-math {
+        margin-bottom: 1rem;
+      }
+      .captcha-math input[type="text"] {
+        max-width: 8rem;
+      }
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.9rem 1rem;
+        overflow-x: auto;
+        font-size: 0.84rem;
+      }
+      code {
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      }
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+      }
+      .topbar nav a {
+        margin-right: 1rem;
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      footer ul {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1.2rem;
+        margin: 0 0 0.75rem;
+        padding: 0;
+      }
+      footer p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <nav>
+          <a href="{% url 'index' %}">All providers</a>
+          <a href="{% url 'mixin' %}">Form mixin</a>
+        </nav>
+        <a href="{{ repository_url }}#readme" rel="noopener">
+          Read the documentation
+        </a>
+      </div>
+      {% block content %}{% endblock %}
+      <footer>
+        <ul>
+          {% for label, url in project_links %}
+          <li>
+            <a href="{{ url }}" rel="noopener">{{ label }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        <p>
+          Demo running django-captcha-kit {{ captcha_kit_version }}. Nothing is
+          stored: submitted forms are discarded.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
