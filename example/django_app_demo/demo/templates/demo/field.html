@@ -1,0 +1,41 @@
+{% extends "demo/base.html" %}
+
+{% block title %}
+    {{ provider.name }} field - django-captcha-kit demo
+{% endblock %}
+
+{% block content %}
+    <h1>{{ provider.name }}<span class="tag">{{ provider.alias }}</span></h1>
+    <p class="lede">
+        {{ provider.summary }} Rendered through <code>CaptchaField("{{ provider.alias }}")</code>,
+        like any other form field.
+    </p>
+
+    {% if success %}
+        <p class="banner ok">Verified by {{ provider.name }}.</p>
+    {% elif submitted %}
+        <p class="banner ko">Rejected. Fix the errors below and try again.</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Send</button>
+    </form>
+
+    <h2>The code</h2>
+    <pre><code>class ContactForm(forms.Form):
+        name = forms.CharField(max_length=100)
+        email = forms.EmailField()
+        message = forms.CharField(widget=forms.Textarea)
+        captcha = CaptchaField("{{ provider.alias }}")</code></pre>
+    <p>
+        The POST field this widget submits is named by the service, not by the form. Look at
+        the request payload: the value arrives under
+        <code>{{ provider.alias }}</code>'s own field name, and the widget finds it anyway.
+    </p>
+    <p>
+        <a href="{% url 'tag' provider.alias %}">See the same provider through the template tag</a>
+        {% if provider.docs %} &middot; <a href="{{ provider.docs }}" rel="noopener">{{ provider.docs_label }}</a>{% endif %}
+    </p>
+{% endblock %}

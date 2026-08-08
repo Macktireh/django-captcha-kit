@@ -1,0 +1,17 @@
+[project]
+name = "django_app_demo"
+version = "0.1.0"
+description = "Django app demo for django-captcha-kit"
+authors = [{ name = "name", email = "email@example.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.1",
+    "django-captcha-kit>=1.0.0",
+    "python-dotenv>=1.2.2",
+]
+
+[tool.pdm]
+distribution = false
+
+[tool.vercel]
+entrypoint = "config.wsgi:application"
