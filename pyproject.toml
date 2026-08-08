@@ -1,0 +1,95 @@
+[project]
+name = "django-captcha-kit"
+dynamic = ["version"]
+description = "Interchangeable CAPTCHA service for Django (Turnstile, reCAPTCHA, hCaptcha) with zero dependencies."
+authors = [
+    { name = "Macktireh Abdi Soubaneh", email = "mack.abdisoubaneh@gmail.com" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["django", "captcha", "turnstile", "recaptcha", "hcaptcha", "spam"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Framework :: Django :: 6.1",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+]
+dependencies = ["django>=5.2"]
+
+[project.urls]
+Homepage = "https://github.com/Macktireh/django-captcha-kit"
+Documentation = "https://github.com/Macktireh/django-captcha-kit#readme"
+Repository = "https://github.com/Macktireh/django-captcha-kit"
+Issues = "https://github.com/Macktireh/django-captcha-kit/issues"
+
+[dependency-groups]
+dev = [
+    "pytest-django>=4.13.0",
+    "ruff>=0.16.2",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.build]
+package-dir = "src"
+
+[tool.pdm.version]
+source = "scm"
+fallback_version = "0.0.0"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["src", "."]
+
+[tool.ruff]
+line-length = 99
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
