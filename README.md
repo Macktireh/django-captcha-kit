@@ -1,6 +1,10 @@
 <h1 align="center">django-captcha-kit</h1>
 
 <p align="center">
+    <img src="https://raw.githubusercontent.com/Macktireh/Media/refs/heads/main/images/django-captcha-kit.png" alt="django-captcha-kit logo" width="200">
+</p>
+
+<p align="center">
     <!-- row 1 — project metadata -->
     <a href="https://pypi.org/project/django-captcha-kit">
       <img src="https://img.shields.io/pypi/v/django-captcha-kit.svg" alt="PyPI Package Version">
