@@ -152,6 +152,13 @@ def test_single_use_can_be_disabled():
     assert provider.verify(value) is True
 
 
+def test_invalid_token_is_rejected_without_consuming_the_cache():
+    provider = MathCaptchaProvider()
+    assert provider.verify("forged-token:5") is False
+    key = f"{provider.salt}:{hashlib.sha256(b'forged-token').hexdigest()}"
+    assert cache.get(key) is None
+
+
 # -- Challenge generation ---------------------------------------------------
 
 

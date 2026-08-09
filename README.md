@@ -104,19 +104,54 @@ migrations.
 
 ## Quick start
 
+### Try it in 30 seconds (no account, no keys)
+
+The built-in `math` provider runs entirely locally: no third-party account, no API keys, no
+script to load. It is the fastest way to see the package working:
+
 ```python
 # settings.py
 CAPTCHA_KIT = {
-    "DEFAULT": env("CAPTCHA_DRIVER", default="none"),
+    "DEFAULT": "math",
+}
+```
+
+Add the field, the view and the template (the three shared steps below) and it works
+immediately. The `math` provider is a lightweight anti-spam measure, **not a secure CAPTCHA** —
+read [Local Math Captcha](#local-math-captcha) before using it beyond tests and demos.
+
+### Use a real provider in production
+
+For real bot resistance, point `DEFAULT` at a hosted provider such as Cloudflare Turnstile.
+You first need a (free) Cloudflare account and a Turnstile widget, which gives you a **site key**
+(public, rendered in the page) and a **secret key** (private, used server-side): create the
+widget from the Cloudflare dashboard — see the
+[Turnstile documentation](https://developers.cloudflare.com/turnstile/). reCAPTCHA and hCaptcha
+work the same way, each with its own dashboard.
+
+```python
+# settings.py
+import os
+
+CAPTCHA_KIT = {
+    "DEFAULT": "turnstile",
     "PROVIDERS": {
         "turnstile": {
-            "SITE_KEY": env("TURNSTILE_SITE_KEY"),
-            "SECRET_KEY": env("TURNSTILE_SECRET_KEY"),
+            "SITE_KEY": os.environ["TURNSTILE_SITE_KEY"],
+            "SECRET_KEY": os.environ["TURNSTILE_SECRET_KEY"],
             "TIMEOUT": 5,
         },
     },
 }
 ```
+
+Define `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` in your environment before starting the
+server, and never commit the secret key. Any loader works — plain `os.environ` as above, or a
+helper such as `django-environ`.
+
+### Add the field, the view and the template
+
+These three steps are identical whichever provider you configured above.
 
 ```python
 # forms.py
@@ -146,11 +181,15 @@ def contact(request):
 </form>
 ```
 
+`{{ form.as_p }}` renders the widget for you, including the provider's `<script>` tag when it
+has one, so there is nothing else to wire in the template.
+
 Passing `request=request` is optional but recommended: it forwards the client IP to the
 verification endpoint as `remoteip`, which most providers use for risk scoring.
 
-The `none` driver, used by default, renders a hidden field and always validates. Keep it in
-development and in tests, and point `DEFAULT` at a real provider in production.
+When `CAPTCHA_KIT` is left undefined, the `none` driver is used: it renders a hidden field and
+always validates. Keep it in development and in tests, and point `DEFAULT` at a real provider in
+production.
 
 ## Usage
 
@@ -285,9 +324,15 @@ form field whatever you like.
 ### Local Math Captcha
 
 The `math` provider asks the visitor to solve a small sum. It contacts nothing, loads no
-third-party script, sets no cookie and needs no account, which makes it a fit for intranets,
-air-gapped deployments, or any site that would rather not send visitor data to a CAPTCHA
-vendor.
+third-party script, sets no cookie and needs no account.
+
+> [!WARNING]
+> **The math provider is not a secure CAPTCHA.** It is a lightweight anti-spam speed bump
+> against naive form-filling bots, nothing more: the question is rendered in clear text, so
+> any targeted attacker parses and solves it, and the answer space is tiny. **Do not rely on
+> it to protect a production application.** It is meant for end-to-end tests, local development
+> and demos. When you need real bot resistance in production, use Turnstile, reCAPTCHA or
+> hCaptcha.
 
 ```python
 CAPTCHA_KIT = {
@@ -330,10 +375,8 @@ Override the template to restyle the challenge. It receives `question`, `token`,
 "PROVIDERS": {"math": {"TEMPLATE_NAME": "myapp/math_captcha.html"}}
 ```
 
-Be clear-eyed about what this buys you. A math challenge stops naive form-filling bots; it
-does not stop a targeted attacker, who can parse the question and solve it. The answer space
-is also small, so pair it with rate limiting on the view. When you need real bot resistance,
-use Turnstile, reCAPTCHA or hCaptcha.
+As stated above, this only stops naive bots and is not fit for production. If you deploy it
+anyway, pair it with rate limiting on the view to blunt repeated guessing.
 
 ## Security notes
 
