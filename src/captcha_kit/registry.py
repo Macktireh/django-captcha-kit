@@ -32,6 +32,7 @@ from .contracts import BaseCaptchaProvider
 BUILTIN_BACKENDS = {
     "none": "captcha_kit.providers.none.NoneProvider",
     "math": "captcha_kit.providers.math.MathCaptchaProvider",
+    "image": "captcha_kit.providers.image.ImageCaptchaProvider",
     "turnstile": "captcha_kit.providers.turnstile.TurnstileProvider",
     "recaptcha": "captcha_kit.providers.recaptcha.RecaptchaProvider",
     "hcaptcha": "captcha_kit.providers.hcaptcha.HcaptchaProvider",
@@ -41,6 +42,7 @@ DEFAULTS = {
     "DEFAULT": "none",
     "PROVIDERS": {},
     "TRUSTED_PROXY_COUNT": 0,
+    "REFRESH_RATE": 30,
 }
 
 SETTING_NAME = "CAPTCHA_KIT"
@@ -90,7 +92,12 @@ def get_captcha_provider(alias: str | None = None) -> BaseCaptchaProvider:
         )
 
     options = {key.lower(): value for key, value in provider_config.items()}
-    return backend_class(**options)
+    provider = backend_class(**options)
+    # Stamped rather than passed to __init__ so that every provider keeps its
+    # options-only constructor. Instances are memoized per alias, so this stays
+    # consistent for the life of the process.
+    provider.alias = alias
+    return provider
 
 
 def clear_provider_cache() -> None:

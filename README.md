@@ -30,44 +30,44 @@ An interchangeable CAPTCHA service for Django. Protect your forms with Cloudflar
 Google reCAPTCHA or hCaptcha, and switch provider by editing one line of configuration
 without touching a single form.
 
-No dependencies beyond Django itself: verification uses the standard library only.
+No dependencies beyond Django itself: verification uses the standard library only. The optional
+`image` provider is the single exception, and it only pulls Pillow in if you ask for it.
 
 **[Try the live demo](https://django-captcha-kit.vercel.app/)** — the same contact form
-protected by all five providers, side by side, with the code for each integration path.
+protected by all six providers, side by side, with the code for each integration path.
 
 ## Table of contents
 
-- [Why this package](#why-this-package)
+- [Supported providers](#supported-providers)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Usage](#usage)
 - [Configuration reference](#configuration-reference)
-- [Built-in providers](#built-in-providers)
+- [Local providers](#local-providers)
   - [Local Math Captcha](#local-math-captcha)
+  - [Local Image Captcha](#local-image-captcha)
+  - [Refreshing the challenge](#refreshing-the-challenge)
 - [Security notes](#security-notes)
 - [Writing your own provider](#writing-your-own-provider)
 - [Testing your project](#testing-your-project)
 - [Development](#development)
 - [License](#license)
 
-## Why this package
+## Supported providers
 
-Every CAPTCHA service works the same way: render a widget, read a token from the POST data,
-verify it. Only three things actually differ between them, so this package reduces a provider
-to a three-method contract, plus one hook for the rare widget that submits more than one
-input:
+| Provider | Alias | Description | Requires | POST field |
+| --- | --- | --- | --- | --- |
+| No verification | `none` | Local. Renders a hidden field and always verifies, for development and tests | - | `captcha` |
+| [Math captcha](#local-math-captcha) | `math` | Local. A small sum to solve, carried by a signed stateless token | - | `captcha-answer` |
+| [Image captcha](#local-image-captcha) | `image` | Local. Distorted characters to retype, drawn server-side | Pillow, through the [`image` extra](#installation) | `captcha-answer` |
+| [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) | `turnstile` | Third-party. Non-interactive widget, challenging only what looks suspicious | Free account, site + secret key | `cf-turnstile-response` |
+| [Google reCAPTCHA v2](https://developers.google.com/recaptcha) (checkbox) | `recaptcha` | Third-party. "I'm not a robot" checkbox, image tasks when suspicious | Free account, site + secret key | `g-recaptcha-response` |
+| [hCaptcha](https://docs.hcaptcha.com/) | `hcaptcha` | Third-party. Checkbox with image tasks, privacy-oriented alternative | Free account, site + secret key | `h-captcha-response` |
 
-| Method | Responsibility |
-| --- | --- |
-| `field()` | Name of the POST field the widget submits |
-| `render()` | HTML snippet to inject into the form |
-| `verify(value, ip=None)` | Server-side verification of the submitted token |
-| `value_from_datadict(data)` | Optional. Reads the field named by `field()` unless the widget submits several inputs |
-
-Your application code never references a concrete provider. It talks to a form field; the
-field asks the registry; the registry reads your settings. Swapping Turnstile for hCaptcha
-is a settings change, and running without any CAPTCHA in development is a settings change too.
+The POST field name is imposed by each service and has nothing to do with the name of the
+field in your Django form. It is resolved transparently by the widget, so you can name the
+form field whatever you like.
 
 ## Requirements
 
@@ -94,6 +94,16 @@ With [PDM](https://pdm-project.org/):
 pdm add django-captcha-kit
 ```
 
+The [`image`](#local-image-captcha) provider draws its challenge with
+[Pillow](https://pillow.readthedocs.io/), which is the only optional dependency of the package.
+Install it through the `image` extra if you intend to use that provider:
+
+```bash
+pip install "django-captcha-kit[image]"
+uv add "django-captcha-kit[image]"
+pdm add "django-captcha-kit[image]"
+```
+
 Add the app to your settings:
 
 ```python
@@ -103,8 +113,21 @@ INSTALLED_APPS = [
 ]
 ```
 
-The app is only needed for its templates and its system checks; there are no models and no
-migrations.
+The app is only needed for its templates, its bundled font and its system checks; there are no
+models and no migrations.
+
+Only if you use the local `math` or `image` provider, you may wire up the endpoint that powers
+the [refresh button](#refreshing-the-challenge). It stays optional — without it the package
+serves no URL at all and the button simply never appears — and the hosted providers never use
+it, since their own script refreshes their widget:
+
+```python
+# urls.py
+urlpatterns = [
+    path("captcha/", include("captcha_kit.urls")),
+    # ...
+]
+```
 
 ## Quick start
 
@@ -267,6 +290,7 @@ Everything lives under the single `CAPTCHA_KIT` setting.
 | `DEFAULT` | `str` | `"none"` | Alias used when no alias is given explicitly |
 | `PROVIDERS` | `dict` | `{}` | Per-alias configuration, see below |
 | `TRUSTED_PROXY_COUNT` | `int` | `0` | Number of reverse proxies you control in front of the app. `0` ignores `X-Forwarded-For` entirely |
+| `REFRESH_RATE` | `int` | `30` | Challenges the [refresh endpoint](#refreshing-the-challenge) serves per client per minute. `0` disables the limit |
 
 ### Provider keys
 
@@ -288,9 +312,10 @@ The remaining keys are provider-specific. Turnstile, reCAPTCHA and hCaptcha acce
 | `VERIFY_HOSTNAME` | `bool` | `True` | Rejects a token that was solved on an unexpected host |
 | `HOSTNAMES` | `list[str]` | `settings.ALLOWED_HOSTS` | Hosts accepted when `VERIFY_HOSTNAME` is on |
 
-The `math` provider has [its own keys](#local-math-captcha), and `none` takes none.
+The `math` and `image` providers have their own keys ([math](#local-math-captcha),
+[image](#local-image-captcha)), and `none` takes none.
 
-`BACKEND` may be omitted for the five built-in aliases. A full example:
+`BACKEND` may be omitted for the six built-in aliases. A full example:
 
 ```python
 CAPTCHA_KIT = {
@@ -311,19 +336,9 @@ CAPTCHA_KIT = {
 }
 ```
 
-## Built-in providers
+## Local providers
 
-| Alias | Service | POST field | Documentation |
-| --- | --- | --- | --- |
-| `none` | No verification, for development and tests | `captcha` | - |
-| `math` | Local Math Captcha, no third party | `captcha-answer` | [see below](#local-math-captcha) |
-| `turnstile` | Cloudflare Turnstile | `cf-turnstile-response` | [developers.cloudflare.com/turnstile](https://developers.cloudflare.com/turnstile/) |
-| `recaptcha` | Google reCAPTCHA v2 (checkbox) | `g-recaptcha-response` | [developers.google.com/recaptcha](https://developers.google.com/recaptcha) |
-| `hcaptcha` | hCaptcha | `h-captcha-response` | [docs.hcaptcha.com](https://docs.hcaptcha.com/) |
-
-The POST field name is imposed by each service and has nothing to do with the name of the
-field in your Django form. It is resolved transparently by the widget, so you can name the
-form field whatever you like.
+The two providers that need no third party at all, and the refresh control they share.
 
 ### Local Math Captcha
 
@@ -381,6 +396,137 @@ Override the template to restyle the challenge. It receives `question`, `token`,
 
 As stated above, this only stops naive bots and is not fit for production. If you deploy it
 anyway, pair it with rate limiting on the view to blunt repeated guessing.
+
+### Local Image Captcha
+
+The `image` provider asks the visitor to retype characters drawn on a distorted image. Like
+`math`, it contacts nothing, loads no third-party script, sets no cookie and needs no account.
+Unlike `math`, the challenge is never present as text in the page.
+
+The rendering is built around what actually survives an attacker's preprocessing, because most
+of what looks like protection does not:
+
+- **The word is warped along two sine waves.** A geometric distortion cannot be filtered out —
+  it changes the shape of the glyphs themselves, so template matching has to cope with it.
+- **Glyphs touch and overlap**, at their own size and rotation. Segmentation, not recognition,
+  is the hard half of reading a CAPTCHA: isolated characters are a solved problem.
+- **The crossing strokes are drawn in the same ink and at the same width as the glyph stems**,
+  and they are bent by the same warp. Thin pale hairlines are erased by one median pass; noise
+  that looks like a letter cannot be removed without removing letters.
+- **One ink per challenge, not one colour per character.** Per-character colours look better
+  but hand an attacker free segmentation: cluster the pixels by hue and the overlapping glyphs
+  come apart again.
+
+The light speckle is the one exception, kept only as a deterrent against bots that do no
+preprocessing at all: a 3×3 median filter removes every speck in a single pass.
+
+It requires Pillow, installed through the [`image` extra](#installation).
+
+> [!WARNING]
+> **The image provider is inaccessible to visually impaired users.** It ships no audio
+> alternative, so anyone relying on a screen reader cannot complete a form protected by it.
+> Do not make it the only way through a public form.
+>
+> It is also **not a match for a hosted service**. The rendering below is built to survive the
+> preprocessing a real attacker applies, but no distorted-text CAPTCHA withstands a trained
+> classifier or a cheap human-solving farm — and unlike Turnstile or reCAPTCHA it sees no
+> traffic beyond your own, so it cannot score behaviour or reputation. It raises the cost of
+> naive and mid-range bots, and it is a good fit when a third party is not an option
+> (air-gapped deployments, privacy or regulatory constraints). When you need real bot
+> resistance and can call out, use Turnstile, reCAPTCHA or hCaptcha, and pair whichever you
+> pick with rate limiting.
+
+```python
+CAPTCHA_KIT = {
+    "DEFAULT": "image",
+    "PROVIDERS": {
+        "image": {
+            "LENGTH": 6,
+            "MAX_AGE": 600,
+        },
+    },
+}
+```
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `LENGTH` | `int` | `6` | Number of characters in the challenge, at least `6` |
+| `ALPHABET` | `str` | `"acdefhkmnprtwxy234678"` | Characters the challenge may use |
+| `WIDTH` | `int` | `260` | Width of the rendered image, in pixels |
+| `HEIGHT` | `int` | `80` | Height of the rendered image, in pixels |
+| `FONT_PATHS` | `list[str]` | bundled Bitstream Vera | TrueType files, one picked at random per character |
+| `MAX_AGE` | `int` | `600` | Lifetime of a challenge, in seconds |
+| `SINGLE_USE` | `bool` | `True` | Consume a challenge on its first verification |
+| `CACHE_ALIAS` | `str` | `"default"` | Cache backing the single-use guard |
+| `TEMPLATE_NAME` | `str` | `"captcha_kit/image.html"` | Template rendering the challenge |
+
+The default alphabet leaves out every glyph that becomes ambiguous once rotated and noisy
+(`0/O/o`, `1/l/I`, `5/S`, `8/B`, `9/g/q`, `2/z`, `u/v`) and sticks to lowercase, since answers
+are compared case-insensitively. Widen it at the cost of a few more failed attempts by honest
+users.
+
+Six characters over that alphabet is already about 85 million answers, so `LENGTH` is floored
+there and longer challenges buy little: single use and rate limiting are what stop guessing,
+not the size of the answer space. Raise it if you like, but widen `WIDTH` with it — the word is
+scaled down to fit the image, and small glyphs cost honest users more than they cost bots.
+
+The token design is the same as the math provider's: the widget submits the typed answer plus a
+hidden token carrying a keyed hash of the expected characters, derived from `settings.SECRET_KEY`
+and a per-render nonce. The server keeps no state between rendering and verification, and a
+challenge is consumed on its first verification, correct or not — the same `SINGLE_USE` and
+`CACHE_ALIAS` caveats as [above](#local-math-captcha) apply.
+
+The PNG is inlined in the form as a `data:` URI, so nothing has to be routed or rate-limited to
+display a challenge. The cost is 4 to 8 KB of HTML per rendered form at the default size.
+
+The bundled Bitstream Vera font makes the rendering identical across environments with no setup.
+Point `FONT_PATHS` at your own `.ttf` files to change the look; every path is checked at startup.
+
+Override the template to restyle the challenge. It receives `image` (the `data:` URI), `width`,
+`height`, `token`, `answer_field` and `challenge_field`:
+
+```python
+"PROVIDERS": {"image": {"TEMPLATE_NAME": "myapp/image_captcha.html"}}
+```
+
+If you deploy it, pair it with rate limiting on the view: single use stops one token being
+replayed, not a bot requesting a thousand fresh challenges.
+
+### Refreshing the challenge
+
+A deliberately hard-to-read challenge needs an escape hatch. Adding
+`path("captcha/", include("captcha_kit.urls"))` to your URLconf puts a small refresh icon beside
+the challenge, which swaps in a new one **without reloading the page**, so everything else the
+visitor already typed is preserved. It works for both local providers, `image` and `math`.
+
+The include is what switches the feature on. Providers reverse the URL to build the control, so
+without it there is no button, no script, no stylesheet and no route — the reverse simply fails
+and the template renders exactly as before. There is no setting to get wrong and no way to end
+up with a button pointing at a URL you do not serve.
+
+The endpoint returns the widget markup for one alias, and it is subject to `REFRESH_RATE`
+(default 30 per client per minute, `0` to disable). That limit exists because rendering an image
+costs real CPU on a public URL; like the single-use guard it lives in the cache, so it is only
+as shared as the cache is. Nothing is verified or consumed there, so it is not an oracle, it has
+no side effects and it needs no CSRF token — but responses are sent `no-store`, since a cached
+challenge would be a replayable one.
+
+Three things come from the include, all served by Django with long cache headers so there is no
+`collectstatic` step to forget:
+
+| URL | Purpose |
+| --- | --- |
+| `challenge/<alias>/` | A freshly rendered widget |
+| `refresh.js` | Swaps the widget in place, ~2 KB |
+| `captcha.css` | Styles the icon button only, scoped to its own classes |
+
+Both files also ship under `static/captcha_kit/` if you would rather serve them yourself.
+
+Accessibility and progressive enhancement are handled: the button carries an `aria-label`, ships
+`hidden` and is only revealed by the script, so a visitor without JavaScript never sees a control
+that cannot work. After a swap the focus moves to the answer field and an `aria-live` region
+announces the new challenge. The icon inherits `currentColor`, so it suits a light or a dark
+theme without configuration, and the spin animation respects `prefers-reduced-motion`.
 
 ## Security notes
 
@@ -442,7 +588,19 @@ through `SILENCED_SYSTEM_CHECKS` if it does not apply to your setup.
 
 ## Writing your own provider
 
-Implement the three-method contract:
+Every CAPTCHA service works the same way: render a widget, read a token from the POST data,
+verify it. Only three things actually differ between them, so this package reduces a provider
+to a three-method contract, plus one hook for the rare widget that submits more than one
+input:
+
+| Method | Responsibility |
+| --- | --- |
+| `field()` | Name of the POST field the widget submits |
+| `render()` | HTML snippet to inject into the form |
+| `verify(value, ip=None)` | Server-side verification of the submitted token |
+| `value_from_datadict(data)` | Optional. Reads the field named by `field()` unless the widget submits several inputs |
+
+Implement it to plug in any service:
 
 ```python
 from captcha_kit.contracts import BaseCaptchaProvider
@@ -489,6 +647,30 @@ class MyCaptcha(SiteVerifyProvider):
 ```
 
 The template receives the `site_key` variable.
+
+If instead your provider verifies its challenge locally, subclass `SignedChallengeProvider` and
+implement `_challenge()`, returning the public part of the challenge and its expected answer,
+plus `_render_context()`, returning the template variables that present it. The signed token,
+its expiry and the single-use guard come for free — this is how the `math` and `image` providers
+are built:
+
+```python
+from captcha_kit.providers.signed import SignedChallengeProvider
+
+
+class MyCaptcha(SignedChallengeProvider):
+    template_name = "myapp/my_captcha.html"
+    salt = "myapp.captcha"  # must be unique: it keys the signature and the digest
+
+    def _challenge(self) -> tuple[str, str]:
+        return "the question", "the answer"
+
+    def _render_context(self, challenge) -> dict:
+        return {"question": challenge}
+```
+
+The template also receives `token`, `answer_field` and `challenge_field`, which the base class
+reads back on submission.
 
 ### Widgets that submit several inputs
 
@@ -563,3 +745,7 @@ pdm run python manage.py runserver
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The package bundles the Bitstream Vera Sans font, used by the `image` provider, under its own
+permissive license: see
+[`src/captcha_kit/fonts/COPYRIGHT.TXT`](src/captcha_kit/fonts/COPYRIGHT.TXT).

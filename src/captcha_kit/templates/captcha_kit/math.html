@@ -1,6 +1,19 @@
 {% load i18n %}
-<div class="captcha-math">
+{% if style_url %}<link rel="stylesheet" href="{{ style_url }}">{% endif %}
+<div class="captcha-math" data-captcha{% if refresh_url %} data-captcha-url="{{ refresh_url }}"{% endif %}>
     <label for="id_{{ answer_field }}">{% blocktranslate %}What is {{ question }}?{% endblocktranslate %}</label>
-    <input type="text" name="{{ answer_field }}" id="id_{{ answer_field }}" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="captcha-frame">
+        <input type="text" name="{{ answer_field }}" id="id_{{ answer_field }}" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
+        {% if refresh_url %}
+        <button type="button" class="captcha-refresh" data-captcha-refresh hidden aria-label="{% translate 'Ask a different question' %}" title="{% translate 'Ask a different question' %}">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                <path d="M12 5a7 7 0 1 0 6.6 4.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M12 2.2 15.7 5.4 12 8.6Z" fill="currentColor"></path>
+            </svg>
+        </button>
+        {% endif %}
+    </div>
     <input type="hidden" name="{{ challenge_field }}" value="{{ token }}">
+    {% if refresh_url %}<span class="captcha-status" data-captcha-status role="status" aria-live="polite" data-captcha-message="{% translate 'A new question has been loaded.' %}"></span>{% endif %}
 </div>
+{% if script_url %}<script src="{{ script_url }}" defer></script>{% endif %}

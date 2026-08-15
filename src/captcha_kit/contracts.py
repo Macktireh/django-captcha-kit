@@ -14,6 +14,11 @@ class BaseCaptchaProvider(ABC):
     the POST field name, the HTML snippet, and the verification call.
     """
 
+    #: Alias the instance was resolved under, stamped by the registry. A
+    #: provider needs it to build URLs pointing back at itself; it is never
+    #: ``None`` on an instance obtained through ``get_captcha_provider``.
+    alias: str | None = None
+
     def __init__(self, **options) -> None:
         self.options = options
 
