@@ -113,6 +113,12 @@ CAPTCHA_KIT = {
             # single-use guard is best effort on Vercel. See the README.
             "SINGLE_USE": env_bool("MATH_SINGLE_USE", True),
         },
+        "image": {
+            "LENGTH": 6,
+            "MAX_AGE": 600,
+            # Same best-effort caveat as the math provider above.
+            "SINGLE_USE": env_bool("IMAGE_SINGLE_USE", True),
+        },
         "turnstile": {
             "SITE_KEY": env("TURNSTILE_SITE_KEY"),
             "SECRET_KEY": env("TURNSTILE_SECRET_KEY"),
