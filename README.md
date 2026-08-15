@@ -52,6 +52,7 @@ protected by all six providers, side by side, with the code for each integration
 - [Writing your own provider](#writing-your-own-provider)
 - [Testing your project](#testing-your-project)
 - [Development](#development)
+- [Credits](#credits)
 - [License](#license)
 
 ## Supported providers
@@ -600,6 +601,8 @@ input:
 | `verify(value, ip=None)` | Server-side verification of the submitted token |
 | `value_from_datadict(data)` | Optional. Reads the field named by `field()` unless the widget submits several inputs |
 
+This is the interchangeable-service pattern; see [Credits](#credits) for where it comes from.
+
 Implement it to plug in any service:
 
 ```python
@@ -741,6 +744,13 @@ cp .env.example .env
 pdm install
 pdm run python manage.py runserver
 ```
+
+## Credits
+
+The interchangeable-provider design — one contract, one resolution point, and the concrete
+class picked by configuration — follows the pattern laid out in Grafikart's
+[Créer un service interchangeable](https://grafikart.fr/tutoriels/service-interchangeable-2349)
+(in French, written for Laravel), transposed to Django.
 
 ## License
 
