@@ -33,7 +33,7 @@ PROVIDERS = [
         alias="none",
         name="None",
         summary="Renders a hidden field and accepts everything. For development and tests.",
-        docs=f"{REPOSITORY}#built-in-providers",
+        docs=f"{REPOSITORY}#supported-providers",
         docs_label="Package docs",
     ),
     Provider(
@@ -41,6 +41,13 @@ PROVIDERS = [
         name="Local Math Captcha",
         summary="A small sum solved locally. No third party, no network call, no cookie.",
         docs=f"{REPOSITORY}#local-math-captcha",
+        docs_label="Package docs",
+    ),
+    Provider(
+        alias="image",
+        name="Local Image Captcha",
+        summary="Distorted characters drawn locally with Pillow. No third party, no network.",
+        docs=f"{REPOSITORY}#local-image-captcha",
         docs_label="Package docs",
     ),
     Provider(
