@@ -32,6 +32,7 @@ from .contracts import BaseCaptchaProvider
 BUILTIN_BACKENDS = {
     "none": "captcha_kit.providers.none.NoneProvider",
     "math": "captcha_kit.providers.math.MathCaptchaProvider",
+    "image": "captcha_kit.providers.image.ImageCaptchaProvider",
     "turnstile": "captcha_kit.providers.turnstile.TurnstileProvider",
     "recaptcha": "captcha_kit.providers.recaptcha.RecaptchaProvider",
     "hcaptcha": "captcha_kit.providers.hcaptcha.HcaptchaProvider",
